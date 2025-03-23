@@ -1,6 +1,6 @@
 package com.ygn.elasticsearch.Service;
 
-import com.ygn.elasticsearch.Person.Person;
+import com.ygn.elasticsearch.Document.Person;
 import com.ygn.elasticsearch.repository.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

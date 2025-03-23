@@ -1,4 +1,4 @@
-package com.ygn.elasticsearch.Person;
+package com.ygn.elasticsearch.Document;
 
 import com.ygn.elasticsearch.Helper.Indices;
 import org.springframework.data.elasticsearch.annotations.Document;
