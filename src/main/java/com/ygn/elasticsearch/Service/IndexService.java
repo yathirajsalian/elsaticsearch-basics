@@ -3,6 +3,7 @@ package com.ygn.elasticsearch.Service;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import co.elastic.clients.json.JsonData;
 import com.ygn.elasticsearch.Helper.Indices;
 import com.ygn.elasticsearch.Helper.Util;
@@ -69,5 +70,46 @@ public class IndexService {
                 LOG.error("Error creating index '{}': {}", indexName, e.getMessage(), e);
             }
         }
+    }
+
+
+        public void recreateIndices() {
+            for (final String indexName : INDICES_TO_CREATE) {
+                try {
+                    // Delete index if it exists
+                    boolean indexExists = elasticSearchClient.indices()
+                            .exists(e -> e.index(indexName))
+                            .value();
+                    if (indexExists) {
+                        elasticSearchClient.indices().delete(new DeleteIndexRequest.Builder().index(indexName).build());
+                        LOG.info("Deleted existing index '{}'", indexName);
+                    }
+
+                    // Load settings and mappings JSON as Strings
+                    String settingsJson = Util.loadAsString("static/es-settings.json");
+                    String mappingsJson = Util.loadAsString("static/mappings/" + indexName + ".json");
+
+                    if (settingsJson == null || mappingsJson == null) {
+                        LOG.error("Failed to load settings or mappings for index '{}'", indexName);
+                        continue;
+                    }
+
+                    // Create index
+                    CreateIndexResponse createIndexResponse = elasticSearchClient.indices().create(c -> c
+                            .index(indexName)
+                            .settings(s -> s.withJson(new StringReader(settingsJson)))
+                            .mappings(m -> m.withJson(new StringReader(mappingsJson)))
+                    );
+
+                    if (createIndexResponse.acknowledged()) {
+                        LOG.info("Successfully created index '{}'", indexName);
+                    } else {
+                        LOG.warn("Index '{}' creation was not acknowledged.", indexName);
+                    }
+
+                } catch (IOException e) {
+                    LOG.error("Error recreating index '{}': {}", indexName, e.getMessage(), e);
+                }
+            }
     }
 }
